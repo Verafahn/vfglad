@@ -2,38 +2,39 @@ const std = @import("std");
 const Translator = @import("translate_c").Translator;
 
 pub fn build(b: *std.Build) !void {
-    _ = b;
-}
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
-pub fn gladModule(
-    b: *std.Build,
-    glad: *std.Build.Dependency,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.Optimize,
-) *std.Build.Module {
-    const translate_c = glad.builder.dependency("translate_c", .{});
-    const glfw3_h: Translator = .init(translate_c, .{
-        .c_source_file = glad.path("include/glad/glad.h"),
+    const translate_c = b.dependency("translate_c", .{});
+    const glad: Translator = .init(translate_c, .{
+        .c_source_file = b.path("src/glad.c"),
         .target = target,
         .optimize = optimize,
     });
-    glfw3_h.addIncludePath(b.path("include/"));
+    glad.addIncludePath(b.path("include/"));
 
-    const mod = b.createModule(.{
+    const gen = b.addExecutable(.{
+        .name = "gen",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("gen/glad.zig"),
+            .target = b.graph.host,
+            .optimize = .fast,
+            .imports = &.{
+                .{ .name = "glad", .module = glad.mod },
+            },
+        }),
+    });
+    const run = b.addRunArtifact(gen);
+    const path = run.addOutputFileArg2("glad.zig", .{});
+
+    const glad_mod = b.addModule("glad", .{
+        .root_source_file = path,
         .target = target,
         .optimize = optimize,
-        .link_libc = true,
+        .imports = &.{
+            .{ .name = "glad", .module = glad.mod },
+        },
     });
-    mod.addCSourceFile(.{
-        .file = glad.path("src/glad.c"),
-        .language = .c,
-    });
-    mod.addIncludePath(glad.path("include/"));
 
-    const lib = b.addLibrary(.{
-        .name = "glad",
-        .root_module = mod,
-    });
-    glfw3_h.mod.linkLibrary(lib);
-    return glfw3_h.mod;
+    _ = &glad_mod;
 }

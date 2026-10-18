@@ -19,6 +19,7 @@ pub fn main(init: std.process.Init) !void {
     try w.writeAll(
         \\const glad = @import("glad");
         \\
+        \\pub const loadGLLoader = glad.gladLoadGLLoader;
         \\
     );
 

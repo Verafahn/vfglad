@@ -1,7 +1,7 @@
 .{
-    .name = .glad,
+    .name = .vfglad,
     .version = "0.1.0",
-    .fingerprint = 0xf041dd451255ff91,
+    .fingerprint = 0xabcecfcbaaa0c819,
     .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .translate_c = .{
